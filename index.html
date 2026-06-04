@@ -433,4 +433,170 @@
             <div class="admin-stats">
               <div class="stat-card"><i class="fas fa-mobile-alt"></i> Total Apps: ${allApps.length}</div>
               <button id="adminAddAppBtn" class="btn-primary"><i class="fas fa-plus"></i> Add App</button>
-              <button id="adminManageCatsBtn" class="btn-secondary"><i class="fas 
+              <button id="adminManageCatsBtn" class="btn-secondary"><i class="fas fa-tags"></i> Manage Categories</button>
+            </div>
+          </div>
+          <div class="search-box" style="margin: 1rem 0;"><i class="fas fa-search"></i><input type="text" id="adminSearchInput" placeholder="Search apps..."></div>
+          <div class="cards-grid" id="adminAppsGrid">${renderAppCards(allApps, true)}</div>
+        </div>
+      `;
+      document.getElementById("adminAddAppBtn")?.addEventListener("click", () => openAppModal(null));
+      document.getElementById("adminManageCatsBtn")?.addEventListener("click", openCategoryModal);
+      document.getElementById("adminSearchInput")?.addEventListener("input", (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = allApps.filter(a => a.appName?.toLowerCase().includes(term) || a.developer?.toLowerCase().includes(term));
+        document.getElementById("adminAppsGrid").innerHTML = renderAppCards(filtered, true);
+      });
+    }
+
+    // Modal logic
+    function openAppModal(app = null) {
+      currentEditAppId = app?.id || null;
+      document.getElementById("modalTitle").innerText = app ? "Edit Application" : "Add New App";
+      document.getElementById("appName").value = app?.appName || "";
+      document.getElementById("appVersion").value = app?.version || "";
+      document.getElementById("appSize").value = app?.size || "";
+      document.getElementById("appDeveloper").value = app?.developer || "";
+      document.getElementById("appDescription").value = app?.description || "";
+      document.getElementById("appIconUrl").value = app?.iconUrl || "";
+      document.getElementById("appApkUrl").value = app?.apkUrl || "";
+      document.getElementById("appReleaseDate").value = app?.releaseDate || "";
+      document.getElementById("appFeatured").checked = app?.isFeatured || false;
+      const catSelect = document.getElementById("appCategorySelect");
+      catSelect.innerHTML = `<option value="">Select category</option>` + allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+      if (app?.category) catSelect.value = app.category;
+      document.getElementById("appModal").style.display = "flex";
+    }
+
+    window.editAppById = async (appId) => {
+      const app = allApps.find(a => a.id === appId);
+      if (app) openAppModal(app);
+    };
+    window.deleteAppById = async (id) => {
+      if (!confirm("Delete this app permanently?")) return;
+      showLoading(true);
+      await deleteAppFromDB(id);
+      await refreshDataAndRender();
+      showLoading(false);
+    };
+    window.downloadAppById = async (appId, apkUrl) => {
+      if (!apkUrl) return alert("No APK link available");
+      await incrementDownloadCount(appId);
+      await refreshDataAndRender();
+      window.open(apkUrl, "_blank");
+    };
+    window.viewAppDetails = (appId) => {
+      const app = allApps.find(a => a.id === appId);
+      if (!app) return;
+      document.getElementById("detailIcon").src = app.iconUrl || "https://via.placeholder.com/70";
+      document.getElementById("detailName").innerText = app.appName;
+      document.getElementById("detailVersion").innerText = app.version || "1.0";
+      document.getElementById("detailSize").innerText = app.size || "N/A";
+      document.getElementById("detailCategory").innerText = app.category;
+      document.getElementById("detailDeveloper").innerText = app.developer || "Official";
+      document.getElementById("detailDescription").innerText = app.description || "No description";
+      document.getElementById("detailReleaseDate").innerText = app.releaseDate || "Unknown";
+      document.getElementById("detailDownloads").innerText = app.downloads || 0;
+      const downloadBtn = document.getElementById("detailDownloadBtn");
+      downloadBtn.onclick = async () => {
+        await incrementDownloadCount(app.id);
+        await refreshDataAndRender();
+        window.open(app.apkUrl, "_blank");
+        document.getElementById("detailsModal").style.display = "none";
+      };
+      document.getElementById("detailsModal").style.display = "flex";
+    };
+    document.getElementById("closeDetailsBtn")?.addEventListener("click", () => document.getElementById("detailsModal").style.display = "none");
+    document.getElementById("closeAppModalBtn")?.addEventListener("click", () => document.getElementById("appModal").style.display = "none");
+    document.getElementById("saveAppBtn")?.addEventListener("click", async () => {
+      const newData = {
+        appName: document.getElementById("appName").value.trim(),
+        version: document.getElementById("appVersion").value.trim(),
+        size: document.getElementById("appSize").value.trim(),
+        category: document.getElementById("appCategorySelect").value,
+        developer: document.getElementById("appDeveloper").value.trim(),
+        description: document.getElementById("appDescription").value.trim(),
+        iconUrl: document.getElementById("appIconUrl").value.trim(),
+        apkUrl: document.getElementById("appApkUrl").value.trim(),
+        releaseDate: document.getElementById("appReleaseDate").value,
+        isFeatured: document.getElementById("appFeatured").checked
+      };
+      if (!newData.appName || !newData.apkUrl || !newData.category) return alert("App Name, Category and APK URL are required");
+      showLoading(true);
+      if (currentEditAppId) await updateAppInDB(currentEditAppId, newData);
+      else await addAppToDB(newData);
+      await refreshDataAndRender();
+      document.getElementById("appModal").style.display = "none";
+      showLoading(false);
+    });
+
+    // category modal
+    function openCategoryModal() {
+      const listDiv = document.getElementById("categoriesList");
+      listDiv.innerHTML = allCategories.map(cat => `<div class="category-item"><span><i class="fas fa-tag"></i> ${cat.name}</span><button class="btn-small" onclick="window.deleteCategory('${cat.id}','${cat.name}')"><i class="fas fa-trash"></i></button></div>`).join('');
+      document.getElementById("categoryModal").style.display = "flex";
+    }
+    window.deleteCategory = async (id, name) => {
+      try { await deleteCategoryFromDB(id, name); await refreshDataAndRender(); openCategoryModal(); } catch(e) { alert(e.message); }
+    };
+    document.getElementById("addCategoryBtn")?.addEventListener("click", async () => {
+      const newName = document.getElementById("newCategoryName").value.trim();
+      if (!newName) return alert("Enter name");
+      try { await addCategoryToDB(newName); await refreshDataAndRender(); openCategoryModal(); document.getElementById("newCategoryName").value = ""; } catch(e) { alert(e.message); }
+    });
+    document.getElementById("closeCategoryModalBtn")?.addEventListener("click", () => document.getElementById("categoryModal").style.display = "none");
+
+    // Authentication UI
+    function renderAuthScreen() {
+      root.innerHTML = `
+        <div class="auth-container">
+          <div class="auth-card">
+            <div class="auth-tabs"><button id="loginTabBtn" class="auth-tab active">Login</button><button id="signupTabBtn" class="auth-tab">Sign Up</button></div>
+            <div id="loginPanel"><input type="email" id="loginEmail" placeholder="Email"><input type="password" id="loginPassword" placeholder="Password"><button id="doLoginBtn" class="btn-auth">Login</button></div>
+            <div id="signupPanel" style="display:none;"><input type="email" id="signupEmail" placeholder="Email"><input type="password" id="signupPassword" placeholder="Password"><button id="doSignupBtn" class="btn-auth">Create Account</button></div>
+          </div>
+        </div>
+      `;
+      document.getElementById("loginTabBtn")?.addEventListener("click", () => { document.getElementById("loginPanel").style.display="block"; document.getElementById("signupPanel").style.display="none"; document.getElementById("loginTabBtn").classList.add("active"); document.getElementById("signupTabBtn").classList.remove("active"); });
+      document.getElementById("signupTabBtn")?.addEventListener("click", () => { document.getElementById("loginPanel").style.display="none"; document.getElementById("signupPanel").style.display="block"; document.getElementById("signupTabBtn").classList.add("active"); document.getElementById("loginTabBtn").classList.remove("active"); });
+      document.getElementById("doLoginBtn")?.addEventListener("click", async () => { try { showLoading(true); await signInWithEmailAndPassword(auth, document.getElementById("loginEmail").value, document.getElementById("loginPassword").value); } catch(e) { alert(e.message); } finally { showLoading(false); } });
+      document.getElementById("doSignupBtn")?.addEventListener("click", async () => { try { showLoading(true); await createUserWithEmailAndPassword(auth, document.getElementById("signupEmail").value, document.getElementById("signupPassword").value); } catch(e) { alert(e.message); } finally { showLoading(false); } });
+    }
+
+    // Auth state
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      if (user) {
+        isAdmin = (user.email === ADMIN_EMAIL);
+        await refreshDataAndRender();
+      } else {
+        isAdmin = false;
+        allApps = [];
+        allCategories = [];
+        renderAuthScreen();
+      }
+      updateNavbar();
+    });
+
+    function updateNavbar() {
+      const navRight = document.getElementById("navRight");
+      const mobileNavDiv = document.getElementById("mobileNav");
+      if (currentUser) {
+        navRight.innerHTML = `<span class="user-email"><i class="fas fa-user-circle"></i> ${currentUser.email}</span><button id="logoutNavBtn" class="btn-logout">Logout</button>`;
+        mobileNavDiv.innerHTML = `<button id="mobileLogoutBtn" class="btn-logout">Logout</button>`;
+        document.getElementById("logoutNavBtn")?.addEventListener("click", () => signOut(auth));
+        document.getElementById("mobileLogoutBtn")?.addEventListener("click", () => signOut(auth));
+      } else {
+        navRight.innerHTML = `<button id="showAuthBtn" class="btn-logout">Login</button>`;
+        mobileNavDiv.innerHTML = `<button id="mobileShowAuthBtn" class="btn-logout">Login</button>`;
+        document.getElementById("showAuthBtn")?.addEventListener("click", () => renderAuthScreen());
+        document.getElementById("mobileShowAuthBtn")?.addEventListener("click", () => renderAuthScreen());
+      }
+    }
+    document.getElementById("mobileMenuBtn")?.addEventListener("click", () => document.getElementById("mobileNav")?.classList.toggle("show"));
+    window.openCategoryModal = openCategoryModal;
+    window.openAppModal = openAppModal;
+    window.renderUserDashboard = renderUserDashboard;
+  </script>
+</body>
+</html>
