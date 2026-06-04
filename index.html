@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bala App Store</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#121212;
+    color:white;
+}
+
+header{
+    background:#1f1f1f;
+    padding:15px;
+    text-align:center;
+}
+
+.container{
+    padding:20px;
+}
+
+.card{
+    background:#222;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:15px;
+}
+
+button{
+    background:#00c853;
+    color:white;
+    border:none;
+    padding:10px 15px;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+button:hover{
+    opacity:0.9;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    margin:5px 0;
+    border-radius:5px;
+    border:none;
+}
+
+#adminPanel{
+    display:none;
+    margin-top:20px;
+}
+
+.app{
+    background:#2a2a2a;
+    padding:10px;
+    margin-top:10px;
+    border-radius:8px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>📱 Bala App Store</h1>
+</header>
+
+<div class="container">
+
+    <h2>Available Apps</h2>
+
+    <div id="appList">
+        <div class="app">
+            <h3>Chat App</h3>
+            <p>WhatsApp Style Messaging App</p>
+            <a href="#" download>
+                <button>Download</button>
+            </a>
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>Admin Login</h2>
+
+    <input type="email" id="email" placeholder="Admin Email">
+    <input type="password" id="password" placeholder="Password">
+
+    <button onclick="login()">Login</button>
+
+    <div id="adminPanel">
+
+        <h2>Admin Panel</h2>
+
+        <input type="text" id="appName" placeholder="App Name">
+
+        <input type="text" id="appDesc" placeholder="App Description">
+
+        <input type="text" id="appLink" placeholder="APK Download Link">
+
+        <button onclick="addApp()">Add App</button>
+
+    </div>
+
+</div>
+
+<script>
+
+const ADMIN_EMAIL = "admin@gmail.com";
+const ADMIN_PASSWORD = "123456";
+
+function login(){
+
+    const email =
+        document.getElementById("email").value;
+
+    const password =
+        document.getElementById("password").value;
+
+    if(
+        email === ADMIN_EMAIL &&
+        password === ADMIN_PASSWORD
+    ){
+        alert("Admin Login Success");
+
+        document.getElementById("adminPanel")
+            .style.display = "block";
+
+    }else{
+        alert("Invalid Login");
+    }
+}
+
+function addApp(){
+
+    const name =
+        document.getElementById("appName").value;
+
+    const desc =
+        document.getElementById("appDesc").value;
+
+    const link =
+        document.getElementById("appLink").value;
+
+    if(!name || !desc || !link){
+        alert("Fill all fields");
+        return;
+    }
+
+    const appHTML = `
+        <div class="app">
+            <h3>${name}</h3>
+            <p>${desc}</p>
+            <a href="${link}">
+                <button>Download</button>
+            </a>
+        </div>
+    `;
+
+    document.getElementById("appList")
+        .innerHTML += appHTML;
+
+    alert("App Added");
+}
+
+</script>
+
+</body>
+</html>
