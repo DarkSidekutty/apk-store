@@ -1,175 +1,436 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bala App Store</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>APK Nexus | Modern App Store</title>
+  <!-- Google Fonts & Font Awesome 6 -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
 
-<style>
-body{
-    margin:0;
-    font-family:Arial,sans-serif;
-    background:#121212;
-    color:white;
-}
+    body {
+      background: #0B0E14;
+      color: #F1F5F9;
+      overflow-x: hidden;
+    }
 
-header{
-    background:#1f1f1f;
-    padding:15px;
-    text-align:center;
-}
+    /* custom scroll */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1E293B; }
+    ::-webkit-scrollbar-thumb { background: #3B82F6; border-radius: 10px; }
 
-.container{
-    padding:20px;
-}
+    /* navbar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .logo {
+      font-size: 1.6rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #60A5FA, #A78BFA);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.5px;
+    }
+    .logo i { margin-right: 8px; color: #3B82F6; background: none; -webkit-background-clip: unset; background-clip: unset; color: #60A5FA; }
+    .nav-right { display: flex; gap: 1.2rem; align-items: center; }
+    .user-email {
+      background: #1E293B;
+      padding: 0.4rem 1rem;
+      border-radius: 40px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .btn-logout {
+      background: #EF4444;
+      border: none;
+      padding: 0.5rem 1.2rem;
+      border-radius: 40px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-logout:hover { background: #DC2626; transform: scale(0.97); }
+    .mobile-menu-btn {
+      display: none;
+      font-size: 1.8rem;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+    .mobile-nav {
+      display: none;
+      background: #0F172A;
+      padding: 1rem;
+      border-top: 1px solid #1E293B;
+    }
+    .mobile-nav.show { display: flex; flex-direction: column; gap: 0.8rem; }
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: block; }
+      .nav-right { display: none; }
+      .navbar { flex-wrap: wrap; }
+    }
 
-.card{
-    background:#222;
-    padding:15px;
-    border-radius:10px;
-    margin-bottom:15px;
-}
+    /* loading overlay */
+    #loading-overlay {
+      position: fixed; top:0; left:0; width:100%; height:100%;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+      z-index: 999; display: none; justify-content: center; align-items: center;
+      flex-direction: column;
+    }
+    .spinner {
+      width: 50px; height: 50px;
+      border: 4px solid #2D3748; border-top: 4px solid #3B82F6;
+      border-radius: 50%; animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-button{
-    background:#00c853;
-    color:white;
-    border:none;
-    padding:10px 15px;
-    border-radius:5px;
-    cursor:pointer;
-}
-
-button:hover{
-    opacity:0.9;
-}
-
-input{
-    width:100%;
-    padding:10px;
-    margin:5px 0;
-    border-radius:5px;
-    border:none;
-}
-
-#adminPanel{
-    display:none;
-    margin-top:20px;
-}
-
-.app{
-    background:#2a2a2a;
-    padding:10px;
-    margin-top:10px;
-    border-radius:8px;
-}
-</style>
+    /* containers */
+    .dashboard-container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+    .filter-bar {
+      display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;
+      justify-content: space-between; align-items: center;
+    }
+    .search-box {
+      flex: 2; background: #1E293B; border-radius: 60px; padding: 0.6rem 1rem;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .search-box input {
+      background: transparent; border: none; color: white; width: 100%;
+      outline: none; font-size: 1rem;
+    }
+    .category-filter select {
+      background: #1E293B; color: white; border: none; padding: 0.7rem 1.5rem;
+      border-radius: 40px; font-weight: 500; cursor: pointer;
+    }
+    .cards-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 1.8rem; margin: 1.8rem 0;
+    }
+    .app-card {
+      background: #111827; border-radius: 1.5rem; overflow: hidden;
+      transition: all 0.25s ease; border: 1px solid #1F2A3E;
+      backdrop-filter: blur(2px);
+    }
+    .app-card:hover { transform: translateY(-6px); border-color: #3B82F6; box-shadow: 0 20px 25px -12px rgba(59,130,246,0.3); }
+    .card-icon img {
+      width: 70px; height: 70px; object-fit: cover; border-radius: 20px;
+      margin: 1rem 1rem 0 1rem; background: #0F172A; padding: 4px;
+      border: 1px solid #2D3A4E;
+    }
+    .card-info { padding: 0 1rem 1rem 1rem; }
+    .card-info h3 { font-size: 1.25rem; margin-bottom: 0.25rem; }
+    .card-category, .card-downloads { font-size: 0.75rem; color: #94A3B8; margin: 0.25rem 0; }
+    .card-actions { display: flex; gap: 0.6rem; margin-top: 0.8rem; flex-wrap: wrap; }
+    .btn-details, .btn-download, .btn-edit, .btn-delete {
+      padding: 0.35rem 0.9rem; border-radius: 30px; border: none;
+      font-weight: 600; font-size: 0.7rem; cursor: pointer; transition: 0.2s;
+    }
+    .btn-details { background: #334155; color: white; }
+    .btn-download { background: #2563EB; color: white; }
+    .btn-edit { background: #EAB308; color: #0F172A; }
+    .btn-delete { background: #EF4444; color: white; }
+    .section-title {
+      font-size: 1.6rem; font-weight: 700; margin: 1.5rem 0 0.5rem;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    /* auth panels */
+    .auth-container {
+      display: flex; justify-content: center; align-items: center;
+      min-height: 85vh; padding: 1rem;
+    }
+    .auth-card {
+      background: #111827; border-radius: 2rem; width: 420px; max-width: 90%;
+      padding: 2rem; text-align: center; border: 1px solid #2D3A4E;
+    }
+    .auth-tabs { display: flex; gap: 1rem; justify-content: center; margin-bottom: 1.8rem; }
+    .auth-tab {
+      background: none; border: none; color: #94A3B8; font-size: 1rem;
+      font-weight: 600; padding: 0.5rem 1rem; cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+    .auth-tab.active { color: #60A5FA; border-bottom-color: #3B82F6; }
+    .auth-form input {
+      width: 100%; padding: 0.9rem; margin: 0.7rem 0; background: #1E293B;
+      border: none; border-radius: 40px; color: white; font-size: 0.9rem;
+    }
+    .btn-auth {
+      background: #3B82F6; width: 100%; padding: 0.8rem; border-radius: 40px;
+      font-weight: bold; border: none; color: white; font-size: 1rem;
+      cursor: pointer; transition: 0.2s;
+    }
+    .btn-auth:hover { background: #2563EB; }
+    /* admin stats */
+    .admin-stats {
+      display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;
+      margin: 1rem 0 2rem;
+    }
+    .stat-card {
+      background: #1E293B; padding: 0.6rem 1.2rem; border-radius: 60px;
+      font-weight: 600;
+    }
+    .btn-primary, .btn-secondary {
+      padding: 0.65rem 1.4rem; border-radius: 40px; border: none;
+      font-weight: 600; cursor: pointer;
+    }
+    .btn-primary { background: #3B82F6; color: white; }
+    .btn-secondary { background: #334155; color: white; }
+    /* modals */
+    .modal {
+      display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
+      justify-content: center; align-items: center; z-index: 1000;
+    }
+    .modal-content {
+      background: #0F172A; border-radius: 2rem; max-width: 580px; width: 90%;
+      max-height: 85vh; overflow-y: auto; padding: 2rem;
+    }
+    .modal-content input, .modal-content textarea, .modal-content select {
+      width: 100%; margin: 0.5rem 0; padding: 0.75rem;
+      background: #1E293B; border: none; border-radius: 20px;
+      color: white; outline: none;
+    }
+    .category-item {
+      display: flex; justify-content: space-between; background: #1E293B;
+      margin: 0.6rem 0; padding: 0.6rem 1rem; border-radius: 60px;
+      align-items: center;
+    }
+    .btn-small { background: #EF4444; border: none; padding: 0.3rem 0.8rem; border-radius: 30px; color: white; cursor: pointer; }
+    .no-apps { text-align: center; padding: 3rem; color: #6B7280; }
+    .badge-featured { background: #F59E0B; font-size: 0.6rem; border-radius: 30px; padding: 2px 8px; margin-left: 8px; }
+    @media (max-width: 640px) { .dashboard-container { padding: 1rem; } }
+  </style>
 </head>
-
 <body>
+  <div class="navbar">
+    <div class="logo"><i class="fas fa-cloud-upload-alt"></i> APK Nexus</div>
+    <button class="mobile-menu-btn" id="mobileMenuBtn"><i class="fas fa-bars"></i></button>
+    <div class="nav-right" id="navRight"></div>
+  </div>
+  <div class="mobile-nav" id="mobileNav"></div>
+  <div id="dynamicRoot"></div>
+  <div id="loading-overlay"><div class="spinner"></div><p style="margin-top:12px">Loading...</p></div>
 
-<header>
-    <h1>📱 Bala App Store</h1>
-</header>
-
-<div class="container">
-
-    <h2>Available Apps</h2>
-
-    <div id="appList">
-        <div class="app">
-            <h3>Chat App</h3>
-            <p>WhatsApp Style Messaging App</p>
-            <a href="#" download>
-                <button>Download</button>
-            </a>
-        </div>
+  <!-- Modals -->
+  <div id="appModal" class="modal">
+    <div class="modal-content">
+      <h2 id="modalTitle" style="margin-bottom: 1rem;">Add Application</h2>
+      <input id="appName" placeholder="App Name *">
+      <input id="appVersion" placeholder="Version (e.g., 2.1.0)">
+      <input id="appSize" placeholder="Size (MB)">
+      <select id="appCategorySelect"></select>
+      <input id="appDeveloper" placeholder="Developer Name">
+      <textarea id="appDescription" rows="3" placeholder="Description"></textarea>
+      <input id="appIconUrl" placeholder="Icon URL (https://...)">
+      <input id="appApkUrl" placeholder="APK Download Link *">
+      <input id="appReleaseDate" type="date">
+      <label style="display: flex; align-items: center; gap: 10px; margin: 0.7rem 0;">
+        <input type="checkbox" id="appFeatured"> <span>⭐ Featured App (show on user's featured section)</span>
+      </label>
+      <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+        <button class="btn-primary" id="saveAppBtn">Save</button>
+        <button class="btn-secondary" id="closeAppModalBtn">Cancel</button>
+      </div>
     </div>
+  </div>
 
-    <hr>
-
-    <h2>Admin Login</h2>
-
-    <input type="email" id="email" placeholder="Admin Email">
-    <input type="password" id="password" placeholder="Password">
-
-    <button onclick="login()">Login</button>
-
-    <div id="adminPanel">
-
-        <h2>Admin Panel</h2>
-
-        <input type="text" id="appName" placeholder="App Name">
-
-        <input type="text" id="appDesc" placeholder="App Description">
-
-        <input type="text" id="appLink" placeholder="APK Download Link">
-
-        <button onclick="addApp()">Add App</button>
-
+  <div id="categoryModal" class="modal">
+    <div class="modal-content">
+      <h2>📁 Manage Categories</h2>
+      <div id="categoriesList"></div>
+      <input id="newCategoryName" placeholder="New category name">
+      <button class="btn-primary" id="addCategoryBtn" style="margin-top: 1rem;">Add Category</button>
+      <button class="btn-secondary" id="closeCategoryModalBtn">Close</button>
     </div>
+  </div>
 
-</div>
+  <div id="detailsModal" class="modal">
+    <div class="modal-content">
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <img id="detailIcon" width="70" height="70" style="border-radius: 20px;">
+        <div><h2 id="detailName"></h2><p>v<span id="detailVersion"></span> • <span id="detailSize"></span></p></div>
+      </div>
+      <p><i class="fas fa-tag"></i> <span id="detailCategory"></span> | <i class="fas fa-user"></i> <span id="detailDeveloper"></span></p>
+      <p><i class="fas fa-calendar"></i> Release: <span id="detailReleaseDate"></span> | <i class="fas fa-download"></i> <span id="detailDownloads"></span> downloads</p>
+      <p><strong>Description:</strong><br><span id="detailDescription"></span></p>
+      <button id="detailDownloadBtn" class="btn-primary" style="width:100%; margin-top:1rem;"><i class="fas fa-download"></i> Download APK</button>
+      <button class="btn-secondary" id="closeDetailsBtn">Close</button>
+    </div>
+  </div>
 
-<script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, doc, getDocs, addDoc, updateDoc, deleteDoc, query, orderBy, increment, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const ADMIN_EMAIL = "admin@gmail.com";
-const ADMIN_PASSWORD = "123456";
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyABeoXbQrB07SBsytp-8ILuKGVODgNEV58",
+      authDomain: "app-store-f4528.firebaseapp.com",
+      projectId: "app-store-f4528",
+      storageBucket: "app-store-f4528.firebasestorage.app",
+      messagingSenderId: "240365904063",
+      appId: "1:240365904063:web:5f2be28221bb747198e60a",
+      measurementId: "G-V4G223BW4F"
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const ADMIN_EMAIL = "balamurugan63797455192006@gmail.com";
 
-function login(){
+    // Global state
+    let currentUser = null;
+    let isAdmin = false;
+    let allApps = [];
+    let allCategories = [];
+    let currentEditAppId = null;
 
-    const email =
-        document.getElementById("email").value;
+    // DOM elements
+    const root = document.getElementById("dynamicRoot");
+    const loadingOverlay = document.getElementById("loading-overlay");
+    const showLoading = (show) => loadingOverlay.style.display = show ? "flex" : "none";
 
-    const password =
-        document.getElementById("password").value;
-
-    if(
-        email === ADMIN_EMAIL &&
-        password === ADMIN_PASSWORD
-    ){
-        alert("Admin Login Success");
-
-        document.getElementById("adminPanel")
-            .style.display = "block";
-
-    }else{
-        alert("Invalid Login");
+    // Helper: fetch data
+    async function fetchCategories() {
+      const snap = await getDocs(collection(db, "categories"));
+      allCategories = snap.docs.map(d => ({ id: d.id, name: d.data().name }));
+      if (allCategories.length === 0) {
+        const defaults = ["Games", "Productivity", "Education", "Entertainment", "Tools", "Social"];
+        for (let name of defaults) await addDoc(collection(db, "categories"), { name });
+        await fetchCategories();
+      }
     }
-}
-
-function addApp(){
-
-    const name =
-        document.getElementById("appName").value;
-
-    const desc =
-        document.getElementById("appDesc").value;
-
-    const link =
-        document.getElementById("appLink").value;
-
-    if(!name || !desc || !link){
-        alert("Fill all fields");
-        return;
+    async function fetchApps() {
+      const snap = await getDocs(collection(db, "apps"));
+      allApps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      allApps.sort((a,b) => (b.downloads||0) - (a.downloads||0));
     }
 
-    const appHTML = `
-        <div class="app">
-            <h3>${name}</h3>
-            <p>${desc}</p>
-            <a href="${link}">
-                <button>Download</button>
-            </a>
+    // increment download
+    async function incrementDownloadCount(appId) {
+      const appRef = doc(db, "apps", appId);
+      await updateDoc(appRef, { downloads: increment(1) });
+      await fetchApps();
+    }
+
+    // Admin actions
+    async function addAppToDB(appData) {
+      await addDoc(collection(db, "apps"), { ...appData, downloads: 0, releaseDate: appData.releaseDate || new Date().toISOString().slice(0,10) });
+    }
+    async function updateAppInDB(id, data) {
+      await updateDoc(doc(db, "apps", id), data);
+    }
+    async function deleteAppFromDB(id) {
+      await deleteDoc(doc(db, "apps", id));
+    }
+    async function addCategoryToDB(name) {
+      const exists = allCategories.some(c => c.name.toLowerCase() === name.toLowerCase());
+      if (exists) throw new Error("Category already exists");
+      await addDoc(collection(db, "categories"), { name });
+    }
+    async function deleteCategoryFromDB(id, categoryName) {
+      const appsUsing = allApps.filter(app => app.category === categoryName);
+      if (appsUsing.length) throw new Error(`Cannot delete: ${appsUsing.length} app(s) use this category.`);
+      await deleteDoc(doc(db, "categories", id));
+    }
+
+    // refresh UI after mutations
+    async function refreshDataAndRender() {
+      showLoading(true);
+      await fetchCategories();
+      await fetchApps();
+      if (currentUser) renderDashboardByRole();
+      else renderAuthScreen();
+      showLoading(false);
+    }
+
+    // render logic user/admin
+    function renderDashboardByRole() {
+      if (isAdmin) renderAdminDashboard();
+      else renderUserDashboard();
+    }
+
+    // Helper: app cards (showAdminControls)
+    function renderAppCards(appsList, showAdminControls = false) {
+      if (!appsList.length) return '<div class="no-apps"><i class="fas fa-database"></i> No apps found</div>';
+      return appsList.map(app => `
+        <div class="app-card">
+          <div class="card-icon"><img src="${app.iconUrl || 'https://via.placeholder.com/70?text=APP'}" onerror="this.src='https://via.placeholder.com/70?text=Icon'"></div>
+          <div class="card-info">
+            <h3>${escapeHtml(app.appName)} ${app.isFeatured ? '<span class="badge-featured">Featured</span>' : ''}</h3>
+            <p class="card-category"><i class="fas fa-folder"></i> ${app.category || "Uncategorized"}</p>
+            <p class="card-downloads"><i class="fas fa-download"></i> ${app.downloads || 0} downloads</p>
+            <div class="card-actions">
+              <button class="btn-details" onclick="window.viewAppDetails('${app.id}')"><i class="fas fa-info-circle"></i> Details</button>
+              <button class="btn-download" onclick="window.downloadAppById('${app.id}','${escapeHtml(app.apkUrl)}')"><i class="fas fa-cloud-download-alt"></i> Get</button>
+              ${showAdminControls ? `
+                <button class="btn-edit" onclick="window.editAppById('${app.id}')"><i class="fas fa-edit"></i></button>
+                <button class="btn-delete" onclick="window.deleteAppById('${app.id}')"><i class="fas fa-trash"></i></button>
+              ` : ''}
+            </div>
+          </div>
         </div>
-    `;
+      `).join('');
+    }
 
-    document.getElementById("appList")
-        .innerHTML += appHTML;
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m){ if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m;}); }
 
-    alert("App Added");
-}
+    // User dashboard with search, categories, trending, featured
+    let userFilter = { search: "", category: "all" };
+    function renderUserDashboard() {
+      let filtered = [...allApps];
+      if (userFilter.search) filtered = filtered.filter(a => (a.appName?.toLowerCase().includes(userFilter.search.toLowerCase()) || a.developer?.toLowerCase().includes(userFilter.search.toLowerCase())));
+      if (userFilter.category !== "all") filtered = filtered.filter(a => a.category === userFilter.category);
+      
+      const trending = [...allApps].sort((a,b)=>(b.downloads||0)-(a.downloads||0)).slice(0,5);
+      const featuredApps = allApps.filter(a => a.isFeatured === true).slice(0,6);
+      const latest = [...allApps].sort((a,b)=> (b.releaseDate||'').localeCompare(a.releaseDate||'')).slice(0,6);
+      
+      const categoryOptions = ['all', ...allCategories.map(c => c.name)];
+      root.innerHTML = `
+        <div class="dashboard-container">
+          <div class="filter-bar">
+            <div class="search-box"><i class="fas fa-search"></i><input type="text" id="userSearchInput" placeholder="Search by name or developer" value="${userFilter.search}"></div>
+            <div class="category-filter"><select id="userCategorySelect">${categoryOptions.map(cat => `<option value="${cat}" ${userFilter.category===cat ? 'selected':''}>${cat==='all'?'All Categories':cat}</option>`).join('')}</select></div>
+          </div>
+          <div class="section-title"><i class="fas fa-fire"></i> Trending Apps</div>
+          <div class="cards-grid">${renderAppCards(trending)}</div>
+          <div class="section-title"><i class="fas fa-star"></i> Featured Picks</div>
+          <div class="cards-grid">${renderAppCards(featuredApps)}</div>
+          <div class="section-title"><i class="fas fa-clock"></i> Latest Updates</div>
+          <div class="cards-grid">${renderAppCards(latest)}</div>
+          <div class="section-title"><i class="fas fa-th-large"></i> All Apps</div>
+          <div class="cards-grid">${renderAppCards(filtered)}</div>
+        </div>
+      `;
+      document.getElementById("userSearchInput")?.addEventListener("input", (e) => { userFilter.search = e.target.value; renderUserDashboard(); });
+      document.getElementById("userCategorySelect")?.addEventListener("change", (e) => { userFilter.category = e.target.value; renderUserDashboard(); });
+    }
 
-</script>
-
-</body>
-</html>
+    function renderAdminDashboard() {
+      root.innerHTML = `
+        <div class="dashboard-container">
+          <div style="display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center;">
+            <h1><i class="fas fa-crown"></i> Admin Control</h1>
+            <div class="admin-stats">
+              <div class="stat-card"><i class="fas fa-mobile-alt"></i> Total Apps: ${allApps.length}</div>
+              <button id="adminAddAppBtn" class="btn-primary"><i class="fas fa-plus"></i> Add App</button>
+              <button id="adminManageCatsBtn" class="btn-secondary"><i class="fas 
